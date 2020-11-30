@@ -2,6 +2,7 @@
 Returns an authorisation token, valid for 30 mins
 Token must be used as an 'X-Auth-Token' HTTP Header for all API calls to Cisco DNA Center
 '''
+
 import urllib3
 import requests
 import variables
@@ -20,11 +21,9 @@ def get_auth_token():
     url = SERVER + PATH
     hdr = {'content-type': 'application/json'}
 
-    # response = requests.post(url, auth=HTTPBasicAuth(USER, PASSWORD), headers=hdr, verify=False).json()
-    # token = (response['Token'])
-    # return(token)
-
-    return(requests.post(url, auth=HTTPBasicAuth(USER, PASSWORD), headers=hdr, verify=False).json()['Token'])
+    response = requests.post(url, auth=HTTPBasicAuth(USER, PASSWORD), headers=hdr, verify=False).json()
+    token = (response['Token'])
+    return(token)
 
 
 if __name__ == "__main__":
