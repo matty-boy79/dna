@@ -1,5 +1,11 @@
 certifi==2020.11.8
 chardet==3.0.4
+dnacentersdk==2.0.2
+fastjsonschema==2.14.5
+future==0.18.2
 idna==2.10
+PyJWT==1.7.1
 requests==2.25.0
+requests-toolbelt==0.9.1
 urllib3==1.26.2
+webexteamssdk==1.6
