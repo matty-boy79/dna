@@ -20,10 +20,12 @@ def get_auth_token():
     url = SERVER + PATH
     hdr = {'content-type': 'application/json'}
 
-    response = requests.post(url, auth=HTTPBasicAuth(USER, PASSWORD), headers=hdr, verify=False).json()
-    token = (response['Token'])
+    # response = requests.post(url, auth=HTTPBasicAuth(USER, PASSWORD), headers=hdr, verify=False).json()
+    # token = (response['Token'])
+    # return(token)
 
-    return(token)
+    return(requests.post(url, auth=HTTPBasicAuth(USER, PASSWORD), headers=hdr, verify=False).json()['Token'])
+
 
 if __name__ == "__main__":
     print(get_auth_token())
