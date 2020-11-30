@@ -20,8 +20,8 @@ def get_auth_token():
     url = SERVER + PATH
     hdr = {'content-type': 'application/json'}
 
-    response = requests.post(url, auth=HTTPBasicAuth(USER, PASSWORD), headers=hdr, verify=False)
-    token = (response.json()['Token'])
+    response = requests.post(url, auth=HTTPBasicAuth(USER, PASSWORD), headers=hdr, verify=False).json()
+    token = (response['Token'])
 
     return(token)
 
