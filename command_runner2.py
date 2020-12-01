@@ -16,10 +16,13 @@ urllib3.disable_warnings()
 # Create a DNACenterAPI Connection Object to be used for subsequent API calls
 dnac = api.DNACenterAPI(username=USER, password=PASSWORD, base_url=SERVER, version=VERSION, verify=False)
 
-# Create a list with the one command to run
-show_cmd = ["show ip int b | inc Vlan"]
+# Create a list of commands to run, starting with "show run | inc hostname" <-- MANDATORY
+show_cmd = ["show run | inc hostname"] # DO NOT CHANGE THIS LINE
 
-# Create a list of all devices to run the commands(s) on, but UUID
+# Add custom command to run here:
+show_cmd.append("show ip int b | inc Vlan")
+
+# Create a list of all devices to run the commands(s) on, by UUID
 devices = [
     "0da7fb1e-b9c4-41ac-af1e-5628dc00dee5",
     # Add more device UUIDs above this line in quotes with a comma at the end
@@ -50,25 +53,29 @@ while task_status == "CLI Runner request creation":
 #     file.write("--------------\n")
 
 # Download the file from DNAC and store it in a dict object
-file_contents = dnac.file.download_a_file_by_fileid(file_id=my_file_id).data
+file_str = dnac.file.download_a_file_by_fileid(file_id=my_file_id).data.decode()
+file_json_all = json.loads(file_str)
+file_json = file_json_all[0]['commandResponses']['SUCCESS'][show_cmd[1]]
+print(file_json)
 
-file_contents_json = json.loads(file_contents)
-file_contents_clean = file_contents_json[0]['commandResponses']['SUCCESS'][show_cmd[0]]
-file_contents_str = json.dumps(file_contents_clean)
-matt = file_contents_str.replace('\\n', '\n').replace('\\', '')
-mattLine = matt.splitlines()
-
-# Remove the first line of garbage
-del mattLine[0]
-
-# Remove the last line of garbage
-del mattLine[len(mattLine)-1]
-
-# Print all remaining lines
-for line in mattLine:
-    print(line)
-
-
+# file_contents_json = json.loads(file_contents)
+# #file_contents_clean = file_contents_json[0]['commandResponses']['SUCCESS'][show_cmd[1]]
+# file_contents_clean = file_contents_json[0]['commandResponses']['SUCCESS']
+# file_contents_str = json.dumps(file_contents_clean)
+# matt = file_contents_str.replace('\\n', '\n').replace('\\', '')
+# mattLine = matt.splitlines()
+#
+# # Remove the first line of garbage
+# del mattLine[0]
+#
+# # Remove the last line of garbage
+# del mattLine[len(mattLine)-1]
+#
+# # Print all remaining lines
+# for line in mattLine:
+#     print(line)
+#
+#
 # Download the file from DNAC and format the contents appropriately
 # file_contents = str(dnac.file.download_a_file_by_fileid(file_id=my_file_id).data).replace('\\n', '\n').replace('\\', '')
 # print(file_contents)
