@@ -13,7 +13,7 @@ dnac = api.DNACenterAPI(username=USER, password=PASSWORD, base_url=SERVER, versi
 
 devices = dnac.devices.get_device_list(
    reachability_status='Reachable',
-   family='Unified AP'
+   family='Switches and Hubs'
 )
 
 count = 0
