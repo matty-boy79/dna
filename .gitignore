@@ -1,5 +1,5 @@
 variables.py
-command_output.txt
+command_runner_output.txt
 all_in_one_dnac.py
 all_in_one_sda_lab.py
 venv

@@ -1,6 +1,6 @@
 from dnac_auth import get_auth_token
 from get_site_health import get_site_health
-from get_devices import get_devices
+from archive_matt.get_devices_legacy_requests import get_devices
 
 token = get_auth_token()
 
