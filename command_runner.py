@@ -15,23 +15,22 @@ VERSION = variables.DNAC_VERSION
 # Disable warnings about untrusted certs
 urllib3.disable_warnings()
 
+# Count the number of lines (commands) in the commands input file and print an error if empty
 command_count = len(open('commands.txt').readlines())
-
 if command_count == 0:
     print('commands.txt must contain at least one Cisco show command.')
-    exit(0)
+    exit(1)
 
+# Create an empty list
 cmd_list = []
 
+# Populate the list with commands from the input file
 with open('commands.txt', 'r') as cmds_file:
     for line in cmds_file:
         cmd_list.append(line.strip())
 
 # Create a DNACenterAPI Connection Object to be used for subsequent API calls
 dnac = api.DNACenterAPI(username=USER, password=PASSWORD, base_url=SERVER, version=VERSION, verify=False)
-
-# Add custom command to run here:
-#show_cmd.extend(["show ip int b | inc Vlan", "show run int lo0"])
 
 # Create a list of all devices to run the commands(s) on, by UUID
 device_list = [
@@ -44,7 +43,7 @@ device_list = [
 # Call the Command Runner API (asynchronous call) which will return a task ID while the task completes in the background
 task_id = dnac.command_runner.run_read_only_commands_on_devices(commands=cmd_list, deviceUuids=device_list)['response']['taskId']
 
-# Set the value of task_status to be "CLI Runner request creation" to force the below while loop to iterate at least once
+# Set the value of task_status to be "CLI Runner request creation" to force the while loop to iterate at least once
 task_status = "CLI Runner request creation"
 print("Waiting for task to complete.", end="")
 
@@ -53,25 +52,32 @@ while task_status == "CLI Runner request creation":
     task_status = dnac.task.get_task_by_id(task_id)['response']['progress']
     if task_status == "CLI Runner request creation":
         print(".", end="")
-        time.sleep(0.1)
+        time.sleep(1)
     else:
         print("")
         break
 
-my_file_id = json.loads(task_status)['fileId']
+file_id = json.loads(task_status)['fileId']
 
-#######################################################################################################################
+####################################################################################
+# I can't get the SDK to work properly when downloading files from DNAC.
+# So coding this part manually using the standard requests library.
+####################################################################################
 
+# Get the Authentication Token
 token = get_auth_token()
 
+# Create the HTTP headers
 hdr = {
         'content-type': 'application/json',
         'X-Auth-Token': token
     }
 
-path = f'/dna/intent/api/v1/file/{my_file_id}'
+# Set the path and create the full URL for the GET
+path = f'/dna/intent/api/v1/file/{file_id}'
 url = SERVER + path
 
+# GET the file, convert to JSON then loop through the file printing each command on each device
 response = requests.get(url=url, headers=hdr, verify=False).json()
 for switch in response:
     for command in cmd_list:
