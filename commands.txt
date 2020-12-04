@@ -1,0 +1,2 @@
+show ip int b | inc Vlan
+show run int lo0
