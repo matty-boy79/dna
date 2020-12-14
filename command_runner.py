@@ -15,7 +15,14 @@ VERSION = variables.DNAC_VERSION
 # Disable warnings about untrusted certs
 urllib3.disable_warnings()
 
-# Count the number of lines (commands) in the commands input file and print an error if empty
+
+def divide_chunks(l, n):
+    # looping till length l
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
+    # Count the number of lines (commands) in the commands input file and print an error if empty
 command_count = len(open('commands.txt').readlines())
 if command_count == 0:
     print('commands.txt must contain at least one Cisco show command.')
@@ -34,7 +41,7 @@ dnac = api.DNACenterAPI(username=USER, password=PASSWORD, base_url=SERVER, versi
 
 # Get all devices according to below filters
 devices = dnac.devices.get_device_list(
-    id='c7a37bf1-15d7-46c6-a0c0-59ff33f48d5b,d0ae9e33-a589-4e7f-93ca-edb0f3c490a2,08ccea2e-bb49-483e-b6f7-78effdc28035,b7652a09-4d7c-4eac-abf2-2c2a1199e7d9,078582d6-8858-4b44-9ef1-83fa7b8bc4c0,482aaf40-ba73-4ddc-b943-591869cccdda,4cc14745-a7e7-4343-9d5f-345fbc22b399,84132b4e-8c99-4e3c-8e64-60dc97d4fd6e,219dc98d-7916-49c6-9052-01b171ba7b0b,7a4b58f1-eb0e-497d-b079-10c3e0955947,',
+    #id='c7a37bf1-15d7-46c6-a0c0-59ff33f48d5b',
     #hostname='GBVOXERCC9301.necgroup.lan',
     reachability_status='Reachable',
     family='Switches and Hubs',
@@ -56,27 +63,58 @@ for device in devices.response:
     print(device.id, device.hostname)
     count += 1
 
+list_of_device_lists_100_in_length = list(divide_chunks(device_list, 100))
+
 print("=" * 100)
 user_response = input(f"The filter has resulted in {count} devices. Do you want to continue?: ")
 if 'y' not in user_response:
     exit(0)
 
-# Call the Command Runner API (asynchronous call) which will return a task ID while the task completes in the background
-task_id = dnac.command_runner.run_read_only_commands_on_devices(commands=cmd_list, deviceUuids=device_list)['response']['taskId']
+tasks = []
+
+for list in list_of_device_lists_100_in_length:
+    # Call the Command Runner API (asynchronous call) which will return a task ID while the task completes in the background
+    tasks.append(dnac.command_runner.run_read_only_commands_on_devices(commands=cmd_list, deviceUuids=list)['response']['taskId'])
+
+
+
+############################
+for task in tasks:
+    print(task)
+
+#exit()
+############################
+
+
 
 # Set the value of task_status to be "CLI Runner request creation" to force the while loop to iterate at least once
-task_status = "CLI Runner request creation"
+#task_status = "CLI Runner request creation"
 print("Waiting for task to complete.", end="")
 
+
+
+'''
 # While the task status equals "CLI Runner request creation", check and evaluate the task status, then wait a while
 while task_status == "CLI Runner request creation":
-    task_status = dnac.task.get_task_by_id(task_id)['response']['progress']
+    task_status = dnac.task.get_task_by_id(tasks[0])['response']['progress']
     if task_status == "CLI Runner request creation":
         print(".", end="")
         time.sleep(1)
     else:
         print("")
         break
+'''
+
+# While the task status equals "CLI Runner request creation", check and evaluate the task status, then wait a while
+while "endTime" not in task_status:
+    task_status = dnac.task.get_task_by_id(tasks[0])['response']['progress']
+    if task_status == "CLI Runner request creation":
+        print(".", end="")
+        time.sleep(1)
+    else:
+        print("")
+        break
+
 
 file_id = json.loads(task_status)['fileId']
 

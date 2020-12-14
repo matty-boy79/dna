@@ -1,2 +1,1 @@
-show ip int b | inc Vlan
-show run int lo0
+show cts environment-data | inc Current state
