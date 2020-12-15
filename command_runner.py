@@ -41,7 +41,7 @@ dnac = api.DNACenterAPI(username=USER, password=PASSWORD, base_url=SERVER, versi
 
 # Get all devices according to below filters
 devices = dnac.devices.get_device_list(
-    id=['18800ffa-cad6-45c0-865a-605043fab146','b9dab50b-9410-4cc6-9a7d-4ae5fc02b509','2e1942a4-d509-446b-9bdf-ccba61be9502','e55fed2d-2aa3-4c2c-aaaa-d18038d1878c'],
+    #id='18800ffa-cad6-45c0-865a-605043fab146,b9dab50b-9410-4cc6-9a7d-4ae5fc02b509,2e1942a4-d509-446b-9bdf-ccba61be9502,e55fed2d-2aa3-4c2c-aaaa-d18038d1878c,d1a9a24a-7a25-4eaf-bf90-18ee1b268411,d8189a4c-0596-4105-abd1-93f4a3ba50f8,07e7777b-b99e-4100-8dab-aafafbf2d142,3eb690b8-2ef7-4ba1-973e-4785959bb1e3,de9010ad-a223-4cae-ab55-82c3e40afcd8,6c4534d9-460b-4bee-b4e8-2a926fb7eee9,6b4f17af-586c-4076-a9ec-0f183c97a5cd,248f6002-2def-466e-acb9-5c00572ab279,9cb442cd-a680-4dcb-9e2d-3f1ef6f0d846,0ff393fa-f2a1-48c4-bf17-9507cfc1b66a,23d43e24-7a16-4ccc-a5f1-ec76565decbd,aefd0c14-c12d-4763-ae69-119a48b0dda9,f56473dd-4cf0-435e-9c9d-25c6cadcb834,60b761a3-982b-437d-a3ee-6f1fe5106d79,e6102c24-1738-4302-ae8c-da80e0100ae6,d303ef6e-bbe0-443c-b3ae-9eb38e489229',
     #hostname='GBVOXERCC9301.necgroup.lan',
     reachability_status='Reachable',
     family='Switches and Hubs',
@@ -92,34 +92,15 @@ task_status = "CLI Runner request creation"
 print("Waiting for task to complete.", end="")
 
 
+task_status = dnac.task.get_task_by_id(tasks[0])
+while "endTime" not in task_status['response']:
+    print(".")
+    time.sleep(3)
+    task_status = dnac.task.get_task_by_id(tasks[0])
+
+file_id = json.loads(task_status.response.progress)['fileId']
 
 
-# While the task status equals "CLI Runner request creation", check and evaluate the task status, then wait a while
-while task_status == "CLI Runner request creation":
-    task_status = dnac.task.get_task_by_id(tasks[0])['response']['progress']
-    if task_status == "CLI Runner request creation":
-        print(".", end="")
-        time.sleep(1)
-    else:
-        print("")
-        break
-
-
-
-'''
-# While the task status equals "CLI Runner request creation", check and evaluate the task status, then wait a while
-while "endTime" not in task_status:
-    task_status = dnac.task.get_task_by_id(tasks[0])['response']['progress']
-    if task_status == "CLI Runner request creation":
-        print(".", end="")
-        time.sleep(1)
-    else:
-        print("")
-        break
-'''
-
-
-file_id = json.loads(task_status)['fileId']
 
 ####################################################################################
 # I can't get the SDK to work properly when downloading files from DNAC.
