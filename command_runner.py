@@ -41,7 +41,7 @@ dnac = api.DNACenterAPI(username=USER, password=PASSWORD, base_url=SERVER, versi
 
 # Get all devices according to below filters
 devices = dnac.devices.get_device_list(
-    #id='c7a37bf1-15d7-46c6-a0c0-59ff33f48d5b',
+    id=['18800ffa-cad6-45c0-865a-605043fab146','b9dab50b-9410-4cc6-9a7d-4ae5fc02b509','2e1942a4-d509-446b-9bdf-ccba61be9502','e55fed2d-2aa3-4c2c-aaaa-d18038d1878c'],
     #hostname='GBVOXERCC9301.necgroup.lan',
     reachability_status='Reachable',
     family='Switches and Hubs',
@@ -88,12 +88,12 @@ for task in tasks:
 
 
 # Set the value of task_status to be "CLI Runner request creation" to force the while loop to iterate at least once
-#task_status = "CLI Runner request creation"
+task_status = "CLI Runner request creation"
 print("Waiting for task to complete.", end="")
 
 
 
-'''
+
 # While the task status equals "CLI Runner request creation", check and evaluate the task status, then wait a while
 while task_status == "CLI Runner request creation":
     task_status = dnac.task.get_task_by_id(tasks[0])['response']['progress']
@@ -103,8 +103,10 @@ while task_status == "CLI Runner request creation":
     else:
         print("")
         break
-'''
 
+
+
+'''
 # While the task status equals "CLI Runner request creation", check and evaluate the task status, then wait a while
 while "endTime" not in task_status:
     task_status = dnac.task.get_task_by_id(tasks[0])['response']['progress']
@@ -114,6 +116,7 @@ while "endTime" not in task_status:
     else:
         print("")
         break
+'''
 
 
 file_id = json.loads(task_status)['fileId']
