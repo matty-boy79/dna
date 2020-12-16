@@ -18,8 +18,6 @@ urllib3.disable_warnings()
 # Create a global DNACenterAPI Connection Object to be used for subsequent API calls
 dnac = api.DNACenterAPI(username=USER, password=PASSWORD, base_url=SERVER, version=VERSION, verify=False)
 
-# Create an empty global list to store commands read from "commands.txt" file
-cmd_list = []
 
 def get_auth_token():
     path = "/dna/system/api/v1/auth/token"
@@ -28,14 +26,32 @@ def get_auth_token():
 
     response = requests.post(url, auth=HTTPBasicAuth(USER, PASSWORD), headers=hdr, verify=False).json()
     token = (response['Token'])
-    return(token)
+    return token
 
 
-def divide_list_into_chunks(l, n):
+def read_commands_file():
+    # Count the number of lines (commands) in the commands input file and print an error if empty
+    command_count = len(open('commands.txt').readlines())
+    if command_count == 0:
+        print('commands.txt must contain at least one Cisco show command.')
+        exit(1)
+
+    # Create an empty list to store the commands read from the input file
+    list_of_commands = []
+
+    # Populate the list with commands from the input file
+    with open('commands.txt', 'r') as cmds_file:
+        for line in cmds_file:
+            list_of_commands.append(line.strip())
+
+    return list_of_commands
+
+
+def divide_list_into_chunks(my_list, n):
     # Function to split a list of entries into multiple lists with max length = 'n'
     # looping till length l
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
+    for i in range(0, len(my_list), n):
+        yield my_list[i:i + n]
 
 
 def get_file_id_from_task(task_id):
@@ -47,7 +63,7 @@ def get_file_id_from_task(task_id):
     return json.loads(task_status.response.progress)['fileId']
 
 
-def get_file_contents(file_to_download, auth_token):
+def get_file_contents(command_list, file_to_download, auth_token):
     # Create the HTTP headers
     hdr = {
         'content-type': 'application/json',
@@ -66,7 +82,7 @@ def get_file_contents(file_to_download, auth_token):
         hostname = dnac.devices.get_device_by_id(switch['deviceUuid']).response.hostname.strip(".necgroup.lan")
         with open('command_runner_output.txt', 'a') as file:
             file.write(hostname + "#")
-        for command in cmd_list:
+        for command in command_list:
             with open('command_runner_output.txt', 'a') as file:
                 if switch['commandResponses']['FAILURE'] != {}:
                     file.write(">" * 55 + "ERROR" + "<" * 55 + "\n\n")
@@ -81,22 +97,14 @@ def get_file_contents(file_to_download, auth_token):
 
 
 def main():
-    # Count the number of lines (commands) in the commands input file and print an error if empty
-    command_count = len(open('commands.txt').readlines())
-    if command_count == 0:
-        print('commands.txt must contain at least one Cisco show command.')
-        exit(1)
-
-    # Populate the list with commands from the input file
-    with open('commands.txt', 'r') as cmds_file:
-        for line in cmds_file:
-            cmd_list.append(line.strip())
+    # Read the commands.txt file and add all found commands to a list object
+    cmd_list = read_commands_file()
 
     # Get all devices according to below filters
     devices = dnac.devices.get_device_list(
         reachability_status='Reachable',
         family='Switches and Hubs',
-        series='Cisco Catalyst 9300 Series Switches',
+        #series='Cisco Catalyst 9300 Series Switches',
         #id='0da7fb1e-b9c4-41ac-af1e-5628dc00dee5',
         #hostname='GBVOXERCC9301.necgroup.lan',
         #management_ip_address='',
@@ -130,8 +138,11 @@ def main():
     # For each list of device lists, execute the commands on the list of devices and populate the tasks list
     # with the task ID(s)
     for list_of_uuids in list_of_device_lists_100_in_length:
-        # Call the Command Runner API (asynchronous call) which will return a task ID while the task completes in the background
-        tasks.append(dnac.command_runner.run_read_only_commands_on_devices(commands=cmd_list, deviceUuids=list_of_uuids)['response']['taskId'])
+        # Call the Command Runner API (asynchronous call) which will return a task ID
+        # while the task completes in the background
+        tasks.append(dnac.command_runner.run_read_only_commands_on_devices(
+            commands=cmd_list,
+            deviceUuids=list_of_uuids)['response']['taskId'])
 
     # Print a list of tasks
     for task in tasks:
@@ -140,7 +151,7 @@ def main():
     # Print message to users
     print("Waiting for commands to be executed on all switches. This could take a few minutes....")
 
-   # Create an empty list of file IDs
+    # Create an empty list of file IDs
     list_of_file_ids = []
 
     # Populate the list of file IDs with each file ID that is generated from the command runner calls
@@ -167,9 +178,10 @@ def main():
 
     # For each file ID, download the contents and populate the output file
     for file_id in list_of_file_ids:
-        get_file_contents(file_id, token)
+        get_file_contents(cmd_list, file_id, token)
 
     print("Check file: command_runner_output.txt")
+
 
 if __name__ == "__main__":
     main()
