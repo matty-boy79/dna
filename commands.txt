@@ -1,1 +1,1 @@
-show cts environment-data | inc Current state
+show switch
